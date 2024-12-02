@@ -21,6 +21,7 @@
         }
       </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
     <h1>Foot Pressure</h1>
@@ -42,6 +43,8 @@
       <p style="color: red">Note: Set the Server IP of the device to - {{ ip }}</p>
 
     <script>
+        const socket = io(); // Connect to the Socket.IO server
+        
         // Initialize charts
         const chart_left = document.getElementById('chart_left').getContext('2d');
         const chart_right = document.getElementById('chart_right').getContext('2d');
@@ -151,30 +154,18 @@
             right.update();
         }
 
-        // Function to fetch and update the message
-        async function fetchMessage() {
-            try {
-                response = await fetch('/sensor_data_0');
-                data = await response.json();
-                if (data.is_valid){
-                    update_left_sensor_data(data);
-                    update_left_chart(data);
-                }
+        // Listen for the 'update' event from the server
+        socket.on('update', (payload) => {
+            console.log("Update event received:");
+            console.log(payload);
 
-                response = await fetch('/sensor_data_1');
-                data = await response.json();
-                if(data.is_valid){
-                    update_right_sensor_data(data);
-                    update_right_chart(data);
-                }
-            } catch (error) {
-                console.error('Error fetching message:', error);
+            if(payload.device_id == 0){
+                update_left_chart(payload);
             }
-        }
-
-        // Initial fetch and periodic updates
-        fetchMessage();
-        setInterval(fetchMessage, 100); // Check every 500 ms
+            else if(payload.device_id == 1){
+                update_right_chart(payload);
+            }
+        });
     </script>
 </body>
 </html>
