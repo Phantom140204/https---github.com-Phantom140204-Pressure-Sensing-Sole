@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pressure Sensing Sole</title>
+    <style>
+        .chart-container {
+          width: 100%;
+          display: flex;
+          gap: 1%;
+        }
+    
+        .chart-wrapper {
+            width: 50%;
+          align-items: center;
+          margin-bottom: 10px; /* Add spacing below the label */
+        }
+    
+        canvas {
+          border: 1px solid black;
+          flex: 1; /* Make canvas flexible to fill available space */
+        }
+      </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Foot Pressure</h1>
+
+    <div class="chart-container">
+        <div class="chart-wrapper">
+          <p>LEFT - <span id="left_data"></span></p>
+          <br>
+          <canvas id="chart_left"></canvas>
+        </div>
+    
+        <div class="chart-wrapper">
+          <p>RIGHT - <span id="right_data"></span></p>
+          <br>
+          <canvas id="chart_right"></canvas>
+        </div>
+      </div>
+
+      <p style="color: red">Note: Set the Server IP of the device to - {{ ip }}</p>
+
+    <script>
+        // Initialize charts
+        const chart_left = document.getElementById('chart_left').getContext('2d');
+        const chart_right = document.getElementById('chart_right').getContext('2d');
+
+        const left = new Chart(chart_left, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'FSR Toe',
+                        data: [],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    },
+
+                    {
+                        label: 'FSR Middle',
+                        data: [],
+                        borderColor: 'rgb(0, 0, 0)',
+                        tension: 0.1
+                    },
+
+                    {
+                        label: 'FSR Heel',
+                        data: [],
+                        borderColor: 'rgb(51, 255, 51)',
+                        tension: 0.1
+                    },
+                ]
+            }
+        });
+
+        const right = new Chart(chart_right, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'FSR Toe',
+                        data: [],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    },
+
+                    {
+                        label: 'FSR Middle',
+                        data: [],
+                        borderColor: 'rgb(0, 0, 0)',
+                        tension: 0.1
+                    },
+
+                    {
+                        label: 'FSR Heel',
+                        data: [],
+                        borderColor: 'rgb(51, 255, 51)',
+                        tension: 0.1
+                    },
+                ]
+            }
+        });
+
+        // Function to update left sensor data
+        function update_left_sensor_data(data) {
+            const element = document.getElementById('left_data');
+            element.textContent = '[' + data.fsr_toe + ", " + data.fsr_middle + ", " + data.fsr_heel + ']';
+        }
+
+        // Function to update left sensor data
+        function update_right_sensor_data(data) {
+            const element = document.getElementById('right_data');
+            element.textContent = '[' + data.fsr_toe + ", " + data.fsr_middle + ", " + data.fsr_heel + ']';
+        }
+
+        // Function to update the chart
+        function update_left_chart(data_left) {
+            // Limit the number of data points to 100
+            if (left.data.labels.length > 100) {
+                left.data.labels.shift();
+                left.data.datasets[0].data.shift();
+                left.data.datasets[1].data.shift();
+                left.data.datasets[2].data.shift();
+            }
+
+            left.data.labels.push(data_left.timestamp);
+            left.data.datasets[0].data.push(data_left.fsr_toe);
+            left.data.datasets[1].data.push(data_left.fsr_middle);
+            left.data.datasets[2].data.push(data_left.fsr_heel);
+
+            left.update();
+        }
+
+        function update_right_chart(data_right) {
+            // Limit the number of data points to 100
+            if (right.data.labels.length > 100) {
+                right.data.labels.shift();
+                right.data.datasets[0].data.shift();
+                right.data.datasets[1].data.shift();
+                right.data.datasets[2].data.shift();
+            }
+
+            right.data.labels.push(data_right.timestamp);
+            right.data.datasets[0].data.push(data_right.fsr_toe);
+            right.data.datasets[1].data.push(data_right.fsr_middle);
+            right.data.datasets[2].data.push(data_right.fsr_heel);
+
+            right.update();
+        }
+
+        // Function to fetch and update the message
+        async function fetchMessage() {
+            try {
+                response = await fetch('/sensor_data_0');
+                data = await response.json();
+                if (data.is_valid){
+                    update_left_sensor_data(data);
+                    update_left_chart(data);
+                }
+
+                response = await fetch('/sensor_data_1');
+                data = await response.json();
+                if(data.is_valid){
+                    update_right_sensor_data(data);
+                    update_right_chart(data);
+                }
+            } catch (error) {
+                console.error('Error fetching message:', error);
+            }
+        }
+
+        // Initial fetch and periodic updates
+        fetchMessage();
+        setInterval(fetchMessage, 100); // Check every 500 ms
+    </script>
+</body>
+</html>
