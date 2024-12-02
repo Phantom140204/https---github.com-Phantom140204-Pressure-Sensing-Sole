@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 from flask_socketio import SocketIO, emit
+from engineio.async_drivers import threading
 import socket
 import time
 import webbrowser
@@ -13,7 +14,7 @@ ip = socket.gethostbyname(hostname)
 port = 8000
 
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode='threading')  # using threading async mode
 
 @app.route('/')
 def index():
@@ -23,13 +24,11 @@ def index():
 def sensor_data():
     data = request.get_json()
     data['timestamp'] = int((time.time() - server_time) * 1000)
-
     socketio.emit('update', data)
-    
     return jsonify({'status': 'success'})
 
 def run_flask():
-    socketio.run(app, host=ip, port=port)
+    socketio.run(app, host=ip, port=port, allow_unsafe_werkzeug=True)  # Disable reloader when running in thread
 
 def run_gui():
     root = tk.Tk()
@@ -48,7 +47,6 @@ def run_gui():
     webbrowser.open('http://' + ip + ':' + str(port) + '/')
 
     root.mainloop()
-
 
 if __name__ == '__main__':
     run_gui()
