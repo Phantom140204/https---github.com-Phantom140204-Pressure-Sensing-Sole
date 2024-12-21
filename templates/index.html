@@ -3,7 +3,7 @@
 <head>
     <title>Pressure Sensing Sole</title>
     <style>
-        .chart-container {
+        /* .chart-container {
           width: 100%;
           display: flex;
           gap: 1%;
@@ -11,14 +11,109 @@
     
         .chart-wrapper {
             width: 50%;
-          align-items: center;
-          margin-bottom: 10px; /* Add spacing below the label */
-        }
+          align-items: center; */
+          /* margin-bottom: 10px; Add spacing below the label */
+        /* }
     
         canvas {
           border: 1px solid black;
           flex: 1; /* Make canvas flexible to fill available space */
-        }
+        /* } */
+
+        body {
+        display: flex;
+        flex-direction: column; /* Stack foot and chart vertically */
+        align-items: center;   /* Center content horizontally */
+        margin: 0;
+        background-color: #f4f4f4;
+    }
+
+    .chart-container {
+        width: 100%;           /* Maintain existing full-width */
+        display: flex;         /* Keep charts side by side */
+        gap: 1%;               /* Preserve existing spacing */
+        justify-content: center; /* Center the chart group */
+        margin-top: 20px;      /* Add space between foot and charts */
+    }
+
+    .chart-wrapper {
+        width: 50%;            /* Keep 50% width for each chart */
+        align-items: center;
+        margin-bottom: 10px;   /* Spacing below the label */
+        text-align: center;    /* Center-align text in wrappers */
+    }
+
+    canvas {
+        border: 1px solid black;
+        flex: 1;               /* Flexible to fill space */
+        max-width: 100%;       /* Ensure canvas doesn't overflow */
+    }
+    
+    /* Parent container for both feet */
+    .foot-container {
+        display: flex;
+        justify-content: space-around; /* Space between the feet */
+        align-items: center;
+        width: 100%;
+        margin: 20px auto;
+    }
+
+    /* Individual foot container */
+    .foot-section {
+        position: relative;
+        width: 150px; /* Width of each foot */
+        height: 300px; /* Match the SVG ratio */
+    }
+
+    /* Foot outline styling */
+    .foot-outline {
+        width: 100%; /* Scale SVG to fit container */
+        height: 100%; /* Maintain aspect ratio */
+        position: absolute;
+    }
+
+    /* Common LED styling */
+    .led {
+        position: absolute;
+        width: 15px;  /* Diameter of the LEDs */
+        height: 15px;
+        border-radius: 50%; /* Circular shape */
+        background-color: gray; /* Default LED color */
+        transform: translate(-50%, -50%); /* Center LEDs on their positions */
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Optional glow effect */
+    }
+
+    /* Left Foot LED positions */
+    #left-led1 {
+        top: 50px; /* Toes */
+        left: 50px;
+    }
+
+    #left-led2 {
+        top: 150px; /* Middle */
+        left: 80px;
+    }
+
+    #left-led3 {
+        top: 250px; /* Heel */
+        left: 80px;
+    }
+
+    /* Right Foot LED positions */
+    #right-led1 {
+        top: 50px; /* Toes */
+        left: 50px;
+    }
+
+    #right-led2 {
+        top: 150px; /* Middle */
+        left: 80px;
+    }
+
+    #right-led3 {
+        top: 250px; /* Heel */
+        left: 80px;
+    }
       </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -26,15 +121,60 @@
 <body>
     <h1>Foot Pressure</h1>
 
+    <div class="foot-container">
+        <!-- Left Foot -->
+        <div class="foot-section">
+            <svg class="foot-outline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 400">
+                <path d="M100,10 
+                         C120,20,150,50,160,100 
+                         C170,150,140,200,130,230 
+                         C125,260,150,280,140,340 
+                         C130,390,70,390,60,340 
+                         C50,280,75,260,70,230 
+                         C60,200,30,150,40,100 
+                         C50,50,80,20,100,10 Z" 
+                      fill="none" 
+                      stroke="#333" 
+                      stroke-width="3"/>
+            </svg>
+            <!-- Left Foot LEDs -->
+            <div class="led" id="left-led1"></div> <!-- Toes -->
+            <div class="led" id="left-led2"></div> <!-- Middle -->
+            <div class="led" id="left-led3"></div> <!-- Heel -->
+        </div>
+    
+        <!-- Right Foot -->
+        <div class="foot-section">
+            <svg class="foot-outline" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 400">
+                <path d="M100,10 
+                         C120,20,150,50,160,100 
+                         C170,150,140,200,130,230 
+                         C125,260,150,280,140,340 
+                         C130,390,70,390,60,340 
+                         C50,280,75,260,70,230 
+                         C60,200,30,150,40,100 
+                         C50,50,80,20,100,10 Z" 
+                      fill="none" 
+                      stroke="#333" 
+                      stroke-width="3"/>
+            </svg>
+            <!-- Right Foot LEDs -->
+            <div class="led" id="right-led1"></div> <!-- Toes -->
+            <div class="led" id="right-led2"></div> <!-- Middle -->
+            <div class="led" id="right-led3"></div> <!-- Heel -->
+        </div>
+    </div>
+    
+
     <div class="chart-container">
         <div class="chart-wrapper">
-          <p>LEFT - <span id="left_data"></span></p>
+          <p><b>LEFT</b><span id="left_data"></span></p>
           <br>
           <canvas id="chart_left"></canvas>
         </div>
     
         <div class="chart-wrapper">
-          <p>RIGHT - <span id="right_data"></span></p>
+          <p><b>RIGHT</b><span id="right_data"></span></p>
           <br>
           <canvas id="chart_right"></canvas>
         </div>
@@ -154,16 +294,45 @@
             right.update();
         }
 
+        function update_left_foot_led_intensity(ledValues) {
+            // Scale values from 0-4095 to 0-100%
+            const scaledValues = ledValues.map(value => (value / 4095) * 100);
+
+            // Set LED brightness using CSS variables
+            for (let i = 1; i <= 3; i++) {
+                const led = document.getElementById(`left-led${i}`);
+                const intensity = scaledValues[i - 1];
+                led.style.backgroundColor = `rgba(255, 0, 0, ${intensity / 100})`;
+                led.style.boxShadow = `0 0 ${5 + intensity / 10}px ${2 + intensity / 20}px rgba(255, 0, 0, ${intensity / 100})`;
+            }
+        }
+
+        function update_right_foot_led_intensity(ledValues) {
+            // Scale values from 0-4095 to 0-100%
+            const scaledValues = ledValues.map(value => (value / 4095) * 100);
+
+            // Set LED brightness using CSS variables
+            for (let i = 1; i <= 3; i++) {
+                const led = document.getElementById(`right-led${i}`);
+                const intensity = scaledValues[i - 1];
+                led.style.backgroundColor = `rgba(255, 0, 0, ${intensity / 100})`;
+                led.style.boxShadow = `0 0 ${5 + intensity / 10}px ${2 + intensity / 20}px rgba(255, 0, 0, ${intensity / 100})`;
+            }
+        }
+
         // Listen for the 'update' event from the server
         socket.on('update', (payload) => {
             console.log("Update event received:");
             console.log(payload);
+            const intensity_values = [payload.fsr_toe, payload.fsr_middle, payload.fsr_heel];
 
             if(payload.device_id == 0){
                 update_left_chart(payload);
+                update_left_foot_led_intensity(intensity_values);
             }
             else if(payload.device_id == 1){
                 update_right_chart(payload);
+                update_right_foot_led_intensity(intensity_values);
             }
         });
     </script>
